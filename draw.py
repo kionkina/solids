@@ -2,9 +2,98 @@ from display import *
 from matrix import *
 from math import *
 from gmath import *
+import random
 
 def scanline_convert(polygons, i, screen, zbuffer ):
-    pass
+    color = [random.randint(0, 255),random.randint(0, 255),random.randint(0, 255)]
+    
+    p1 = polygons[i]
+    p2 = polygons[i+1]
+    p3 = polygons[i+2]
+    
+    x0 = p1[0]
+    x1 = p2[0]
+    x2 = p3[0]
+    
+    y0 = p1[1]
+    y1 = p2[1]
+    y2 = p3[1]
+
+    z0 = p1[2]
+    z1 = p2[2]
+    z2 = p3[2]
+
+    if (y0 > y2):
+        oldx = x0
+        oldy = y0
+        oldz = z0
+        x0 = x2
+        y0 = y2
+        z0 = z2
+        x2 = oldx
+        y2 = oldy
+        z2 = oldz
+
+    if (y1 < y0):
+        oldx = x0
+        oldy = y0
+        oldz = z0
+        x0 = x1
+        y0 = y1
+        z0 = z1
+        x1 = oldx
+        y1 = oldy
+        z1 = oldz
+        
+    if (y2 < y1):
+        oldx = x1
+        oldy = y1
+        oldz = z1
+        x1 = x2
+        y1 = y2
+        z1 = z2
+        x2 = oldx
+        y2 = oldy
+        z2 = oldz
+
+    y = y0
+    xinit = x0
+    zinit = z0
+    xfin = x0
+    zfin = z1
+    deltax = (x2-x0)/(y2-y0)
+#    deltay = 1 added 1 below
+    deltaz = (z2-z0)/(y2-y0)
+    
+    draw_line(xinit, y, zinit, xfin, y, zfin, screen, zbuffer, color)
+
+    if y1 - y0 != 0:
+        deltaxfin = (x1-x0)/(y1-y0)
+        deltazfin = (z1-z0)/(y1-y0)
+
+        while y < y1:
+            draw_line(xinit, y, zinit, xfin, y, zfin, screen, zbuffer, color)
+            xinit += deltax
+            zinit += deltaz
+            xfin += deltaxfin
+            zfin += deltazfin
+            y += 1
+    y = y1
+    xfin = x1
+    zfin = z1
+
+    if y2 - y1 != 0:
+        deltaxfin = (x2-x1)/(y2-y1)
+        deltazfin = (z2-z1)/(y2-y1)
+
+        while (y < y2):
+            draw_line(xinit, y, zinit, xfin, y, zfin, screen, zbuffer, color)
+            xinit += deltax
+            zinit += deltaz
+            xfin += deltaxfin
+            zfin += deltazfin
+            y +=1
+            
 
 def add_polygon( polygons, x0, y0, z0, x1, y1, z1, x2, y2, z2 ):
     add_point(polygons, x0, y0, z0);
@@ -22,27 +111,7 @@ def draw_polygons( matrix, screen, zbuffer, color ):
         normal = calculate_normal(matrix, point)[:]
 
         if normal[2] > 0:
-            draw_line( int(matrix[point][0]),
-                       int(matrix[point][1]),
-                       matrix[point][2],
-                       int(matrix[point+1][0]),
-                       int(matrix[point+1][1]),
-                       matrix[point+1][2],
-                       screen, zbuffer, color)
-            draw_line( int(matrix[point+2][0]),
-                       int(matrix[point+2][1]),
-                       matrix[point+2][2],
-                       int(matrix[point+1][0]),
-                       int(matrix[point+1][1]),
-                       matrix[point+1][2],
-                       screen, zbuffer, color)
-            draw_line( int(matrix[point][0]),
-                       int(matrix[point][1]),
-                       matrix[point][2],
-                       int(matrix[point+2][0]),
-                       int(matrix[point+2][1]),
-                       matrix[point+2][2],
-                       screen, zbuffer, color)
+            scanline_convert(matrix, point, screen, zbuffer)
         point+= 3
 
 
@@ -310,4 +379,4 @@ def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
             y+= dy_east
             d+= d_east
         loop_start+= 1
-    plot( screen, zbuffer, color, x, y, 0 )
+    plot( screen, zbuffer, color, x1, y1, z1 ) 
